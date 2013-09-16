@@ -1,0 +1,48 @@
+#include "pins.h"
+#include "baseobj.h"
+#include "controller.h"
+#include "message.h"
+#include "driver.h"
+#include "laser.h"
+
+int incomingByte = 0;   // for incoming serial data
+message msg;
+
+driver x(x_dir, x_step, x_min, x_max, true);
+driver y(y_dir, y_step, y_min, y_max, true);
+driver z(z_dir, z_step, z_min, z_max, true);
+laser  l(laser_pin);
+
+controller con;
+
+void setup() {
+	Serial.begin(9600);     // opens serial port, sets data rate to 9600 bps
+
+	while(!x.home() || !y.home() || !z.home()) {
+		delayMicroseconds(step_delay);
+	};
+
+	unsigned int rx = con.addObject(x);
+	unsigned int ry = con.addObject(y);
+	unsigned int rz = con.addObject(z);
+	unsigned int rl = con.addObject(l);
+
+	con.addTrigger(rx, 'x');
+	con.addTrigger(ry, 'y');
+	con.addTrigger(rz, 'z');
+	con.addTrigger(rl, 'l');
+
+	con.addTimer(rx, step_delay);
+	con.addTimer(ry, step_delay);
+	con.addTimer(rz, step_delay);
+}
+
+void loop() {
+	if (Serial.available() > 0) {
+		if(msg.addChar(Serial.read())) {
+			con.fireTrigger(msg.getTarget(), msg.getMessageLen(), msg.getMessage(), msg.getMsgTypes());
+		}
+	}
+	con.fireTimer();
+}
+

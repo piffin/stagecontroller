@@ -1,0 +1,55 @@
+class message
+{
+	private:
+		unsigned char data[20];
+		unsigned int arguments[10];
+		unsigned int length, param;
+
+		void addParam(unsigned int start, unsigned int finish) {
+			if(data[finish] < 48 || data[finish] > 57)
+				arguments[param++] = data[finish];
+			else {
+				bool neg = (data[start] == '-') ? true : false;
+				long total = 0;
+				for(int i = start; i < finish; i++) {
+					total = (total * 10) + (data[i] - 48);
+				}
+				arguments[param++] = (neg) ? -total : total;
+			}
+		}
+
+	public:
+		message() {
+			length = 0;
+		}
+
+		bool addChar(unsigned char chr) {
+			data[length++] = chr;
+
+			if (chr == ';') {
+				param = 0;
+				unsigned int last = 0;
+				for(unsigned int i = 0; i < length; i++) {
+					if(data[i] == ':') {
+						addParam(last, i-1);
+						last = i + 1;
+					}
+				}
+				length = 0;
+				return true;
+			}
+			return false;
+		}
+
+		unsigned int getTarget() {
+			return arguments[0];
+		}
+
+		unsigned int& getMessage() {
+			return arguments[1];
+		}
+
+		unsigned int getMessageLen() {
+			return param - 1;
+		}
+};
